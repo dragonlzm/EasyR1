@@ -50,6 +50,7 @@ class DataConfig:
     min_pixels: int = 262144
     filter_overlong_prompts: bool = True
     use_self_dataset: bool = False
+    image_root: str = None
 
     def post_init(self):
         if self.format_prompt is not None:

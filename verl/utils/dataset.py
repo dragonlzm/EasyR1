@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import math
+import json
 import ipdb
 import os
 from collections import defaultdict
@@ -161,6 +162,7 @@ class RLHFDataset(Dataset):
 
     def __getitem__(self, index):
         example: dict = self.dataset[index]
+        # (Runner pid=1177724) example: {'images': [<PIL.PngImagePlugin.PngImageFile image mode=RGBA size=295x206 at 0x7EF19C156920>], 'problem': '<image>Find the measure of $∠Z$ to the nearest tenth.', 'answer': '33.7'}
         messages = self._build_messages(example)
 
         if self.image_key in example:
@@ -237,6 +239,7 @@ class RLHFSelfDataset(Dataset):
         max_pixels: Optional[int] = None,
         min_pixels: Optional[int] = None,
         filter_overlong_prompts: bool = True,
+        image_root=None,
     ):
         self.tokenizer = tokenizer
         self.processor = processor
@@ -254,14 +257,26 @@ class RLHFSelfDataset(Dataset):
         else:
             data_split = "train"
 
-        if os.path.isdir(data_path):
-            # when we use dataset builder, we should always refer to the train split
-            self.dataset = load_dataset("parquet", data_dir=data_path, split="train")
-        elif os.path.isfile(data_path):
-            self.dataset = load_dataset("parquet", data_files=data_path, split="train")
-        else:
-            # load remote dataset from huggingface hub
-            self.dataset = load_dataset(data_path, split=data_split)
+        # if os.path.isdir(data_path):
+        #     # when we use dataset builder, we should always refer to the train split
+        #     self.dataset = load_dataset("parquet", data_dir=data_path, split="train")
+        # elif os.path.isfile(data_path):
+        #     self.dataset = load_dataset("parquet", data_files=data_path, split="train")
+        # else:
+        #     # load remote dataset from huggingface hub
+        #     self.dataset = load_dataset(data_path, split=data_split)
+        # load the annotation
+        temp_annotations = json.load(open(data_path))
+        # update the path of the image
+        self.dataset = []
+        for ele in temp_annotations:
+            new_ele = {}
+            new_ele['images'] = [os.path.join(image_root, ele['img_id'] + '_origin.png')]
+            new_ele['problem'] = '<image>' + ele['question']
+            new_ele['answer'] = ele['answer']
+            new_ele['location'] = ele['location']
+            # example: {'images': [<PIL.PngImagePlugin.PngImageFile image mode=RGBA size=295x206 at 0x7EF19C156920>], 'problem': '<image>Find the measure of $∠Z$ to the nearest tenth.', 'answer': '33.7'}
+
 
         self.format_prompt = None
         if format_prompt:
@@ -303,8 +318,10 @@ class RLHFSelfDataset(Dataset):
 
     def __getitem__(self, index):
         example: dict = self.dataset[index]
-        ipdb.set_trace() # check what keys in example
+        # ipdb.set_trace() # check what keys in example
+        print('example:', example)
         messages = self._build_messages(example)
+        print('messages:', messages)
 
         if self.image_key in example:
             prompt = self.processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
@@ -316,6 +333,7 @@ class RLHFSelfDataset(Dataset):
             model_inputs = self.processor(images, [prompt], add_special_tokens=False, return_tensors="pt")
             input_ids = model_inputs.pop("input_ids")[0]
             attention_mask = model_inputs.pop("attention_mask")[0]
+            print('example.keys():', example.keys()) # check the keys
             example["multi_modal_data"] = {"image": raw_image_data}
         else:
             prompt = self.tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)

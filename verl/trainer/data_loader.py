@@ -39,6 +39,7 @@ def create_dataloader(config: DataConfig, tokenizer: PreTrainedTokenizer, proces
             min_pixels=config.min_pixels,
             max_pixels=config.max_pixels,
             filter_overlong_prompts=config.filter_overlong_prompts,
+            image_root=config.image_root,
     )
     else:    
         train_dataset = RLHFDataset(
