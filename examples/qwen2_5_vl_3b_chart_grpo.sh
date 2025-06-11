@@ -13,6 +13,7 @@ python3 -m verl.trainer.main \
     worker.actor.model.model_path=${MODEL_PATH} \
     trainer.experiment_name=qwen2_5_vl_3b_chart_grpo_testing \
     trainer.n_gpus_per_node=8 \
+    trainer.total_epochs=5 \
     data.use_self_dataset=True \
     data.format_prompt=./examples/format_prompt/chart_format.jinja \
     data.image_root=/home/ec2-user/updated_code_images
