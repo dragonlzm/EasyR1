@@ -275,6 +275,7 @@ class RLHFSelfDataset(Dataset):
             new_ele['problem'] = '<image>' + ele['question']
             new_ele['answer'] = ele['answer']
             new_ele['location'] = ele['location']
+            self.dataset.append(new_ele)
             # example: {'images': [<PIL.PngImagePlugin.PngImageFile image mode=RGBA size=295x206 at 0x7EF19C156920>], 'problem': '<image>Find the measure of $∠Z$ to the nearest tenth.', 'answer': '33.7'}
 
 
@@ -283,8 +284,8 @@ class RLHFSelfDataset(Dataset):
             with open(format_prompt, encoding="utf-8") as f:
                 self.format_prompt = f.read()
 
-        if self.filter_overlong_prompts:
-            self.dataset = self.dataset.filter(self._filter_overlong_prompts, desc="Filtering overlong prompts")
+        # if self.filter_overlong_prompts:
+        #     self.dataset = self.dataset.filter(self._filter_overlong_prompts, desc="Filtering overlong prompts")
 
     def _build_messages(self, example: Dict[str, Any]) -> List[Dict[str, Any]]:
         prompt_str: str = example[self.prompt_key]

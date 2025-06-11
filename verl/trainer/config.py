@@ -34,7 +34,7 @@ def recursive_post_init(dataclass_obj):
 @dataclass
 class DataConfig:
     train_files: str = ""
-    val_files: str = ""
+    val_files: Optional[str] = None
     prompt_key: str = "prompt"
     answer_key: str = "answer"
     image_key: str = "images"
@@ -50,7 +50,7 @@ class DataConfig:
     min_pixels: int = 262144
     filter_overlong_prompts: bool = True
     use_self_dataset: bool = False
-    image_root: str = '/home/ec2-user/updated_code_images'
+    image_root: Optional[str] = None
 
     def post_init(self):
         if self.format_prompt is not None:
