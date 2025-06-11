@@ -162,8 +162,10 @@ class RLHFDataset(Dataset):
 
     def __getitem__(self, index):
         example: dict = self.dataset[index]
+        # print('in old dataset example:', example)
         # (Runner pid=1177724) example: {'images': [<PIL.PngImagePlugin.PngImageFile image mode=RGBA size=295x206 at 0x7EF19C156920>], 'problem': '<image>Find the measure of $∠Z$ to the nearest tenth.', 'answer': '33.7'}
         messages = self._build_messages(example)
+        # print('in old dataset messages:', messages)
 
         if self.image_key in example:
             prompt = self.processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
@@ -175,6 +177,12 @@ class RLHFDataset(Dataset):
             model_inputs = self.processor(images, [prompt], add_special_tokens=False, return_tensors="pt")
             input_ids = model_inputs.pop("input_ids")[0]
             attention_mask = model_inputs.pop("attention_mask")[0]
+            # print('in old dataset raw_image_data.shape:', len(raw_image_data), type(raw_image_data[0]), np.array(raw_image_data[0]).shape)
+            # print('in old dataset model_inputs.keys():', model_inputs.keys())
+            # print('in old dataset model_inputs["pixel_values"].shape:', model_inputs['pixel_values'].shape)
+            # print('in old dataset model_inputs["image_grid_thw"]:', model_inputs["image_grid_thw"])
+            # print('in old dataset attention_mask:', attention_mask.shape)
+            # print('in old dataset input_ids:', input_ids.shape)
             example["multi_modal_data"] = {"image": raw_image_data}
         else:
             prompt = self.tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
@@ -182,6 +190,7 @@ class RLHFDataset(Dataset):
             input_ids = model_inputs.pop("input_ids")[0]
             attention_mask = model_inputs.pop("attention_mask")[0]
 
+        # print('in old dataset self.processor:', self.processor)
         if self.processor is not None and self.processor.image_processor.__class__.__name__ == "Qwen2VLImageProcessor":
             # qwen2vl mrope
             position_ids = get_rope_index(
@@ -190,6 +199,7 @@ class RLHFDataset(Dataset):
                 image_grid_thw=model_inputs.get("image_grid_thw"),
                 attention_mask=attention_mask,
             )  # (3, seq_length)
+            # print('in old dataset position_ids:', position_ids)
         else:
             position_ids = torch.clip(attention_mask.cumsum(dim=0) - 1, min=0, max=None)  # (seq_length,)
 
@@ -217,6 +227,34 @@ class RLHFDataset(Dataset):
         example["raw_prompt_ids"] = raw_prompt_ids
         example["ground_truth"] = example.pop(self.answer_key)
         return example
+
+# in old dataset
+# (Runner pid=1480555) in old dataset example: {'images': [<PIL.PngImagePlugin.PngImageFile image mode=RGBA size=779x319 at 0x7F5A34176740>], 'problem': '<image>$\\overline{AB} \\perp \\overline{DC}$ and $\\overline{GH} \\perp \\overline{FE}$.\r\nIf $\\triangle ACD \\sim \\triangle GEF$, find $AB$.', 'answer': '2.2'}
+# (Runner pid=1480555) in old dataset messages: [{'role': 'user', 'content': [{'type': 'image'}, {'type': 'text', 'text': '$\\overline{AB} \\perp \\overline{DC}$ and $\\overline{GH} \\perp \\overline{FE}$.\r\nIf $\\triangle ACD \\sim \\triangle GEF$, find $AB$. You FIRST think about the reasoning process as an internal monologue and then provide the final answer. The reasoning process MUST BE enclosed within <think> </think> tags. The final answer MUST BE put in \\boxed{}.'}]}]
+# (Runner pid=1480555) in old dataset raw_image_data.shape: 1 <class 'PIL.PngImagePlugin.PngImageFile'> (319, 779, 4)
+# (Runner pid=1480555) in old dataset model_inputs.keys(): dict_keys(['pixel_values', 'image_grid_thw'])
+# (Runner pid=1480555) in old dataset model_inputs["pixel_values"].shape: torch.Size([1392, 1176])
+# (Runner pid=1480555) in old dataset model_inputs["image_grid_thw"]: tensor([[ 1, 24, 58]])
+# (Runner pid=1480555) in old dataset attention_mask: torch.Size([461])
+# (Runner pid=1480555) in old dataset input_ids: torch.Size([461])
+# Qwen2VLImageProcessorFast
+
+# in new dataset:
+# (Runner pid=1536152) in new dataset example: {'images': ['/home/ec2-user/updated_code_images/02438_origin.png'], 'problem': '<image>For
+#  the subplot in row 1 and column 1, what is the spatially lowest labeled tick on the y-axis which is named as Energy Consumption (TWh)?
+# ', 'answer': 0, 'location': [56, 511, 64, 525]}                                                                                        
+# (Runner pid=1536152) in new dataset messages: [{'role': 'user', 'content': [{'type': 'image'}, {'type': 'text', 'text': 'For the subplo
+# t in row 1 and column 1, what is the spatially lowest labeled tick on the y-axis which is named as Energy Consumption (TWh)? You FIRST 
+# think about the reasoning process as an internal monologue and then provide the final answer. The reasoning process MUST BE enclosed wi
+# thin <think> </think> tags. The final answer MUST BE put in \\boxed{}.'}]}]
+# (Runner pid=1536152) in new dataset raw_image_data.shape: 1 <class 'str'> ()                                                           
+# (Runner pid=1536152) in new dataset model_inputs.keys(): dict_keys(['pixel_values', 'image_grid_thw'])                                 
+# (Runner pid=1536152) in new dataset model_inputs["pixel_values"].shape: torch.Size([6400, 1176])                                       
+# (Runner pid=1536152) in new dataset model_inputs["image_grid_thw"]: tensor([[  1,  50, 128]])                                          
+# (Runner pid=1536152) in new dataset attention_mask: torch.Size([1674])                                                                 
+# (Runner pid=1536152) in new dataset input_ids: torch.Size([1674])  
+# (Runner pid=1536152) in new dataset self.processor: Qwen2_5_VLProcessor:                                                               
+# (Runner pid=1536152) - image_processor: Qwen2VLImageProcessorFast
 
 
 
@@ -320,9 +358,9 @@ class RLHFSelfDataset(Dataset):
     def __getitem__(self, index):
         example: dict = self.dataset[index]
         # ipdb.set_trace() # check what keys in example
-        print('example:', example)
+        # print('in new dataset example:', example)
         messages = self._build_messages(example)
-        print('messages:', messages)
+        # print('in new dataset messages:', messages)
 
         if self.image_key in example:
             prompt = self.processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
@@ -334,7 +372,12 @@ class RLHFSelfDataset(Dataset):
             model_inputs = self.processor(images, [prompt], add_special_tokens=False, return_tensors="pt")
             input_ids = model_inputs.pop("input_ids")[0]
             attention_mask = model_inputs.pop("attention_mask")[0]
-            print('example.keys():', example.keys()) # check the keys
+            # print('in new dataset raw_image_data.shape:', len(raw_image_data), type(raw_image_data[0]), np.array(raw_image_data[0]).shape)
+            # print('in new dataset model_inputs.keys():', model_inputs.keys())
+            # print('in new dataset model_inputs["pixel_values"].shape:', model_inputs['pixel_values'].shape)
+            # print('in new dataset model_inputs["image_grid_thw"]:', model_inputs["image_grid_thw"])
+            # print('in new dataset attention_mask:', attention_mask.shape)
+            # print('in new dataset input_ids:', input_ids.shape)
             example["multi_modal_data"] = {"image": raw_image_data}
         else:
             prompt = self.tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
@@ -342,6 +385,7 @@ class RLHFSelfDataset(Dataset):
             input_ids = model_inputs.pop("input_ids")[0]
             attention_mask = model_inputs.pop("attention_mask")[0]
 
+        # print('in new dataset self.processor:', self.processor)
         if self.processor is not None and self.processor.image_processor.__class__.__name__ == "Qwen2VLImageProcessor":
             # qwen2vl mrope
             position_ids = get_rope_index(
@@ -350,6 +394,7 @@ class RLHFSelfDataset(Dataset):
                 image_grid_thw=model_inputs.get("image_grid_thw"),
                 attention_mask=attention_mask,
             )  # (3, seq_length)
+            # print('in new dataset position_ids:', position_ids)
         else:
             position_ids = torch.clip(attention_mask.cumsum(dim=0) - 1, min=0, max=None)  # (seq_length,)
 
