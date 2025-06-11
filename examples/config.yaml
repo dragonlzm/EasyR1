@@ -16,7 +16,7 @@ data:
   min_pixels: 262144
   filter_overlong_prompts: true
   use_self_dataset: false
-  image_root: null
+  image_root: /home/ec2-user/updated_code_images
 
 algorithm:
   adv_estimator: grpo
