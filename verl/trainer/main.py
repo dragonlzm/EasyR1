@@ -76,9 +76,13 @@ class Runner:
 
         RemoteRewardManager = ray.remote(RewardManager).options(num_cpus=config.worker.reward.num_cpus)
         reward_fn = RemoteRewardManager.remote(config.worker.reward, tokenizer)
-        val_reward_fn = RemoteRewardManager.remote(config.worker.reward, tokenizer)
 
         train_dataloader, val_dataloader = create_dataloader(config.data, tokenizer, processor)
+
+        if val_dataloader is not None:
+            val_reward_fn = RemoteRewardManager.remote(config.worker.reward, tokenizer)
+        else:
+            val_reward_fn = None
 
         trainer = RayPPOTrainer(
             config=config,
