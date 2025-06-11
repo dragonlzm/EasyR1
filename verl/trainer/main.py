@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import json
-
+import ipdb
 import ray
 from omegaconf import OmegaConf
 
@@ -107,6 +107,7 @@ def main():
     if hasattr(cli_args, "config"):
         config_path = cli_args.pop("config", None)
         file_config = OmegaConf.load(config_path)
+        ipdb.set_trace()
         default_config = OmegaConf.merge(default_config, file_config)
 
     ppo_config = OmegaConf.merge(default_config, cli_args)
