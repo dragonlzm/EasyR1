@@ -16,4 +16,5 @@ python3 -m verl.trainer.main \
     trainer.total_epochs=5 \
     data.use_self_dataset=True \
     data.format_prompt=./examples/format_prompt/chart_format.jinja \
-    data.image_root=/home/ec2-user/updated_code_images
+    data.image_root=/home/ec2-user/updated_code_images \
+    data.max_prompt_length=4096

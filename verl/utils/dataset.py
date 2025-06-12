@@ -311,7 +311,7 @@ class RLHFSelfDataset(Dataset):
             new_ele = {}
             new_ele['images'] = [os.path.join(image_root, ele['img_id'] + '_origin.png')]
             new_ele['problem'] = '<image>' + ele['question']
-            new_ele['answer'] = ele['answer']
+            new_ele['answer'] = str(ele['answer'])
             new_ele['location'] = ele['location']
             self.dataset.append(new_ele)
             # example: {'images': [<PIL.PngImagePlugin.PngImageFile image mode=RGBA size=295x206 at 0x7EF19C156920>], 'problem': '<image>Find the measure of $∠Z$ to the nearest tenth.', 'answer': '33.7'}
